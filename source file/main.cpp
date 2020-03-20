@@ -1,74 +1,94 @@
 #include <bits/stdc++.h>
+#include <windows.h>
+#include <unistd.h>
+#include "WordCounter.h"
+#define pb push_back
 using namespace std;
+char pathFileName[1024] = "d:\\WordCounterPath";
+int Argc;
+char **Argv;
+string fileName;
+bool isSubdir = false;
 
-struct WC
+void GetAllDir(const string &dir)
 {
-    ifstream inFile;
-    int num_char;
-    int num_word;
-    int num_line;
+    freopen(pathFileName, "w", stdout);
+    system((string("dir /b 2>NUL ") += dir).c_str());
+    fclose(stdout);
+    freopen("CON", "w", stdout);
+}
 
-    WC() { num_char = 0, num_word = 0, num_line = 0; }
-
-    void open(char *File)
+vector<string> GetSubDir(string dir)
+{
+    GetAllDir(dir);
+    vector<string> res;
+    string str;
+    ifstream ifs(pathFileName);
+    if (!ifs.is_open())
     {
-        inFile.open(File);
-        if (inFile.is_open() == 0)
-        {
-            cout << "Fail : File Not Found" << endl;
-            exit(0);
-        }
+        cout << "Fail";
+        exit(0);
     }
-
-    void Count(int argc, char *argv[])
+    while (ifs >> str)
     {
-        string str;
-        while (getline(inFile, str))
-            for (int i = 1; i < argc; ++i)
-            {
-                if (string(argv[i]) == string("-c"))
-                {
-                    num_char += str.size();
-                }
-                if (string(argv[i]) == string("-w"))
-                {
-                    for (int j = 0; j < str.size();)
-                    {
-                        if (isalpha(str[j]))
-                        {
-                            num_word++;
-                            while (j < str.size() and isalpha(str[j]))
-                                j++;
-                        }
-                        else
-                            j++;
-                    }
-                }
-                if (string(argv[i]) == string("-l"))
-                    num_line++;
-            }
+        string t = dir;
+        (t += "\\") += str;
+        DWORD dwattr = GetFileAttributes(t.c_str());
+        if (dwattr & FILE_ATTRIBUTE_DIRECTORY)
+            res.pb(t);
     }
+    ifs.close();
+    return res;
+}
 
-    void print(int argc, char *argv[])
+void Count(const string &path)
+{
+    //递归子文件夹
+    if (isSubdir)
     {
-
-        for (int i = 1; i < argc; ++i)
-        {
-            if (string(argv[i]) == string("-c"))
-                cout << "num_char : " << num_char << endl;
-            if (string(argv[i]) == string("-w"))
-                cout << "num_word : " << num_word << endl;
-            if (string(argv[i]) == string("-l"))
-                cout << "num_line : " << num_line << endl;
-        }
+        vector<string> subdir = GetSubDir(path);
+        for (string t : subdir)
+            Count(t);
     }
-};
+    //利用system的dir实现通配符匹配
+    string filepath = path;
+    filepath += fileName;
+    GetAllDir(filepath);
+
+    ifstream ifs(pathFileName);
+    if (!ifs.is_open())
+    {
+        cout << "Fail";
+        exit(0);
+    }
+    string file;
+    while (ifs >> file)
+    {
+        filepath = path;
+        (filepath += "\\") += file;
+        WC wc;
+        if (wc.open(filepath))
+            wc.print(Argc, Argv);
+    }
+    ifs.close();
+}
 
 int main(int argc, char *argv[])
 {
-    WC wc;
-    wc.open(argv[argc - 1]);
-    wc.Count(argc, argv);
-    wc.print(argc, argv);
+    Argc = argc;
+    Argv = argv;
+    fileName = (string("\\") += argv[argc - 1]);
+    char nowPath[1024];
+    getcwd(nowPath, 1024);
+
+    for (int i = 0; i < argc; ++i)
+        if (string(argv[i]) == string("-s"))
+            isSubdir = true;
+
+    Count(nowPath);
+
+    string del = "del 2>NUL ";
+    del += pathFileName;
+    system(del.c_str());
     return 0;
 }
