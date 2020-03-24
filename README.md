@@ -23,3 +23,9 @@
 输出当前目录和子目录下所有的.cpp文件的字符数、单词数、行数。
 * wc.exe -x
 转变为图形界面
+
+#### wc.exe文件夹
+- 包含wc.exe和运行需要的文件
+- wc.exe.zip为wc.exe文件夹的压缩包
+
+[详细博客地址](https://www.cnblogs.com/shakugannoshana/p/12530967.html)
