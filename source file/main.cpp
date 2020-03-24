@@ -1,15 +1,21 @@
-#include <bits/stdc++.h>
-#include <windows.h>
+#include <iostream>
 #include <unistd.h>
 #include "WordCounter.h"
-#define pb push_back
+#include "mainwindow.h"
+#include <QApplication>
+#include <QFileInfo>
+#include <QDebug>
+#include <QTextStream>
+
 using namespace std;
-char pathFileName[1024] = "d:\\WordCounterPath";
+char pathFileName[128] = "d:\\WordCounterPath";
 int Argc;
 char **Argv;
 string fileName;
 bool isSubdir = false;
+bool isWindow = false;
 
+//用system的dir命令获取文件目录
 void GetAllDir(const string &dir)
 {
     freopen(pathFileName, "w", stdout);
@@ -17,7 +23,6 @@ void GetAllDir(const string &dir)
     fclose(stdout);
     freopen("CON", "w", stdout);
 }
-
 vector<string> GetSubDir(string dir)
 {
     GetAllDir(dir);
@@ -33,9 +38,9 @@ vector<string> GetSubDir(string dir)
     {
         string t = dir;
         (t += "\\") += str;
-        DWORD dwattr = GetFileAttributes(t.c_str());
-        if (dwattr & FILE_ATTRIBUTE_DIRECTORY)
-            res.pb(t);
+        QFileInfo fi(t.c_str());
+        if (fi.isDir())
+            res.push_back(t);
     }
     ifs.close();
     return res;
@@ -73,22 +78,41 @@ void Count(const string &path)
     ifs.close();
 }
 
+int ShowWindow()
+{
+    QApplication a(Argc, Argv);
+    MainWindow w;
+    w.show();
+    return a.exec();
+}
+
 int main(int argc, char *argv[])
 {
+    QTextStream cout(stdout);
     Argc = argc;
     Argv = argv;
-    fileName = (string("\\") += argv[argc - 1]);
-    char nowPath[1024];
-    getcwd(nowPath, 1024);
 
     for (int i = 0; i < argc; ++i)
+    {
         if (string(argv[i]) == string("-s"))
             isSubdir = true;
+        if (string(argv[i]) == string("-x"))
+            isWindow = true;
+    }
 
-    Count(nowPath);
+    if (isWindow)
+        ShowWindow();
+    else
+    {
+        fileName = (string("\\") += argv[argc - 1]);
 
-    string del = "del 2>NUL ";
-    del += pathFileName;
-    system(del.c_str());
+        char nowPath[1024];
+        getcwd(nowPath, 1024);
+        Count(nowPath);
+        string del = "del 2>NUL ";
+        del += pathFileName;
+        system(del.c_str());
+    }
+
     return 0;
 }
